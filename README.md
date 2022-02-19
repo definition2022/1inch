@@ -1,3 +1,11 @@
+## 1inch Limit Order Protocol + NFT Tickets Smart Contract with dynamic pricing and discounts
+### Definition Hackathon, MLSWAT team
+
+![flow](flow.jpg "flow")
+
+#### Due to time constraints we cloned https://github.com/1inch/limit-order-protocol and added our contract and tests. You can find the original README below.
+
+---
 <p align="center">
   <img src="https://app.1inch.io/assets/images/logo.svg" width="200" alt="1inch network" />
 </p>
