@@ -13,7 +13,7 @@ const { buildOrderData } = require('./helpers/orderUtils');
 const { toBN, cutLastArg } = require('./helpers/utils');
 
 describe('NFTickets', async function () {
-    let _, wallet;
+    let _, wallet, addr1;
     const privatekey = '59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
     const account = Wallet.fromPrivateKey(Buffer.from(privatekey, 'hex'));
 
@@ -63,7 +63,7 @@ describe('NFTickets', async function () {
     }
 
     before(async function () {
-        [_, wallet] = await web3.eth.getAccounts();
+        [_, wallet, addr1] = await web3.eth.getAccounts();
     });
 
     beforeEach(async function () {
@@ -142,6 +142,44 @@ describe('NFTickets', async function () {
         expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
         expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('1000')));
         expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('1000')));
+    });
+
+    describe('VIP ticket', async function () {
+        it('should fill with correct taker', async function () {
+            const order = buildOrder(
+                '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
+            );
+            // order.allowedSender = _;
+            const data = buildOrderData(this.chainId, this.swap.address, order);
+            const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+            const makerMorg = await this.morg.balanceOf(wallet);
+            const takerMorg = await this.morg.balanceOf(_);
+            const makerWeth = await this.weth.balanceOf(wallet);
+            const takerWeth = await this.weth.balanceOf(_);
+            console.log("Balances: %s %s %s %s", makerMorg, takerMorg, makerWeth, takerWeth );
+
+            await this.swap.fillOrder(order, signature, 0, 1, 1); 
+
+            expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
+            expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+            expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(web3.utils.toBN('1')));
+            expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(web3.utils.toBN('1')));
+        });
+
+        it('should not fill with incorrect taker', async function () {
+            const order = buildOrder(
+                '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
+            );
+            order.allowedSender = wallet;
+            const data = buildOrderData(this.chainId, this.swap.address, order);
+            const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+            await expectRevert(
+                this.swap.fillOrder(order, signature, 0, 1, 1),
+                'LOP: private order',
+            );
+        });
     });
 
 });
