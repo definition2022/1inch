@@ -126,22 +126,22 @@ describe('NFTickets', async function () {
 
         const makerMorg = await this.morg.balanceOf(wallet);
         const takerMorg = await this.morg.balanceOf(_);
-        const makerWeth = await this.weth.balanceOf(wallet)/10**18;
-        const takerWeth = await this.weth.balanceOf(_)/10**18;
+        const makerWeth = await this.weth.balanceOf(wallet);
+        const takerWeth = await this.weth.balanceOf(_);
         console.log("Balances: %s %s %s %s", makerMorg, takerMorg, makerWeth, takerWeth );
 
         await this.swap.fillOrder(order, signature, 0, ether('1000'), 1); 
 
         const makerMorg1 = await this.morg.balanceOf(wallet);
         const takerMorg1 = await this.morg.balanceOf(_);
-        const makerWeth1 = await this.weth.balanceOf(wallet)/10**18;
-        const takerWeth1 = await this.weth.balanceOf(_)/10**18;
-        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1, takerWeth1 );
+        const makerWeth1 = await this.weth.balanceOf(wallet);
+        const takerWeth1 = await this.weth.balanceOf(_);
+        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1/10**18, takerWeth1/10**18 );
 
-        // expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.add(ether('4040')));
-        // expect(await this.dai.balanceOf(_)).to.be.bignumber.equal(takerDai.sub(ether('4040')));
-        // expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.sub(ether('1')));
-        // expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.add(ether('1')));
+        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
+        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+        expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('1000')));
+        expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('1000')));
     });
 
 });
