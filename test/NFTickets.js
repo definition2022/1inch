@@ -70,7 +70,7 @@ describe('NFTickets', async function () {
         this.dai = await TokenMock.new('DAI', 'DAI');
         this.weth = await TokenMock.new('WETH', 'WETH');
         this.inch = await TokenMock.new('1INCH', '1INCH');
-        this.morg = await NFTMock.new("Morgenshtern", "MORG");
+        this.morg = await TokenMock.new('Morgenshtern', 'MORG');//await NFTMock.new("Morgenshtern", "MORG");
         
         //console.log(this.weth);
         //console.log(this.nft);
@@ -82,12 +82,13 @@ describe('NFTickets', async function () {
         this.chainId = await this.dai.getChainId();
 
         await this.dai.mint(wallet, ether('1000000'));
-        await this.weth.mint(wallet, ether('1000000'));
+        // await this.weth.mint(wallet, ether('1000000'));
         await this.inch.mint(wallet, ether('1000000'));
         await this.dai.mint(_, ether('1000000'));
         await this.weth.mint(_, ether('1000000'));
         await this.inch.mint(_, ether('1000000'));
-        await this.morg.safeMint(wallet, '1');
+        await this.morg.mint(wallet, 10);
+        // await this.morg.safeMint(wallet, '1');
         // await this.morg.safeMint(wallet, '2');
         // await this.morg.safeMint(wallet, '3');
         // await this.morg.safeMint(wallet, '4');
@@ -103,11 +104,12 @@ describe('NFTickets', async function () {
         await this.dai.approve(this.swap.address, ether('1000000'));
         await this.weth.approve(this.swap.address, ether('1000000'));
         await this.inch.approve(this.swap.address, ether('1000000'));
-        await this.morg.setApprovalForAll(this.swap.address, true);
+        await this.morg.approve(this.swap.address, 10);
+        // await this.morg.setApprovalForAll(this.swap.address, true);
         await this.dai.approve(this.swap.address, ether('1000000'), { from: wallet });
         await this.weth.approve(this.swap.address, ether('1000000'), { from: wallet });
         await this.inch.approve(this.swap.address, ether('1000000'), { from: wallet });
-        // await this.morg.approve(this.swap.address, '1'), { from: wallet });
+        await this.morg.approve(this.swap.address, 10, { from: wallet });
 
         this.daiOracle = await AggregatorMock.new(ether('0.00025'));
         this.ethOracle = await AggregatorMock.new(ether('3000'));
@@ -116,7 +118,7 @@ describe('NFTickets', async function () {
 
     it('NFT sell', async function () {
         const order = buildOrder(
-            '1', this.morg, this.weth, '1', ether('1').toString(),0,0,
+            '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(),'0x','0x',
         );
 
         const data = buildOrderData(this.chainId, this.swap.address, order);
@@ -124,18 +126,17 @@ describe('NFTickets', async function () {
 
         const makerMorg = await this.morg.balanceOf(wallet);
         const takerMorg = await this.morg.balanceOf(_);
-        const makerWeth = await this.weth.balanceOf(wallet);
-        const takerWeth = await this.weth.balanceOf(_);
+        const makerWeth = await this.weth.balanceOf(wallet)/10**18;
+        const takerWeth = await this.weth.balanceOf(_)/10**18;
         console.log("Balances: %s %s %s %s", makerMorg, takerMorg, makerWeth, takerWeth );
 
-        // Тут проблема
-       // await this.swap.fillOrder(order, signature, 0, 1, 1); 
+        await this.swap.fillOrder(order, signature, 0, ether('1000'), 1); 
 
-        // const makerMorg1 = await this.morg.balanceOf(wallet);
-        // const takerMorg1 = await this.morg.balanceOf(_);
-        // const makerWeth1 = await this.weth.balanceOf(wallet);
-        // const takerWeth1 = await this.weth.balanceOf(_);
-        // console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1, takerWeth1 );
+        const makerMorg1 = await this.morg.balanceOf(wallet);
+        const takerMorg1 = await this.morg.balanceOf(_);
+        const makerWeth1 = await this.weth.balanceOf(wallet)/10**18;
+        const takerWeth1 = await this.weth.balanceOf(_)/10**18;
+        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1, takerWeth1 );
 
         // expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.add(ether('4040')));
         // expect(await this.dai.balanceOf(_)).to.be.bignumber.equal(takerDai.sub(ether('4040')));
