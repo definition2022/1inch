@@ -9,6 +9,7 @@ const TokenMock = artifacts.require('TokenMock');
 const LimitOrderProtocol = artifacts.require('LimitOrderProtocol');
 const AggregatorMock = artifacts.require('AggregatorMock');
 const DatePriceCalculatorMock = artifacts.require('DatePriceCalculator');
+const WhiteListContract = artifacts.require('WhiteListContract');
 
 const { buildOrderData } = require('./helpers/orderUtils');
 const { toBN, cutLastArg } = require('./helpers/utils');
@@ -71,6 +72,7 @@ describe('NFTickets', async function () {
         
         this.swap = await LimitOrderProtocol.new();
         this.datePriceCalculator = await DatePriceCalculatorMock.new();
+        this.whiteListContract = await WhiteListContract.new();
 
         this.chainId = await this.dai.getChainId();
 
@@ -115,7 +117,6 @@ describe('NFTickets', async function () {
         const takerWeth = await this.weth.balanceOf(_);
 
         for (let i = 0; i < 2; i++) {
-            console.log('enter');
             const order = buildOrder(
                 i.toString(), this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
             );
@@ -123,7 +124,6 @@ describe('NFTickets', async function () {
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
             await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
-            console.log('filled order');
         }
 
         expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('2')));
@@ -146,7 +146,6 @@ describe('NFTickets', async function () {
             const takerMorg = await this.morg.balanceOf(_);
             const makerWeth = await this.weth.balanceOf(wallet);
             const takerWeth = await this.weth.balanceOf(_);
-            console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
 
             await this.swap.fillOrder(order, signature, 0, 1, 1);
 
@@ -282,32 +281,23 @@ describe('NFTickets', async function () {
         });
     });
 
-    xit('White list gets discount', async function () {
-        const makerAmount = ether('100');
-        const takerAmount = ether('631');
-        const priceCall = buildDoublePriceGetter(this.swap, this.inchOracle, this.daiOracle, '1000000000', ether('1'));
-        const predicate = this.swap.contract.methods.lt(ether('6.32'), this.swap.address, priceCall).encodeABI();
+    it('White list gets discount', async function () {
+        const makerMorg = await this.morg.balanceOf(wallet);
+        const takerMorg = await this.morg.balanceOf(_);
+        const makerWeth = await this.weth.balanceOf(wallet);
+        const takerWeth = await this.weth.balanceOf(_);
 
         const order = buildOrder(
-            '1', this.inch, this.dai, makerAmount.toString(), takerAmount.toString(),
-            cutLastArg(this.swap.contract.methods.getMakerAmount(makerAmount, takerAmount, 0).encodeABI()),
-            cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
-            constants.ZERO_ADDRESS,
-            predicate,
+            '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
         );
+        order.receiver = this.whiteListContract.address;
+        // order.interaction = this.whiteListContract.address + _.slice(2);
         const data = buildOrderData(this.chainId, this.swap.address, order);
         const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
-        const makerDai = await this.dai.balanceOf(wallet);
-        const takerDai = await this.dai.balanceOf(_);
-        const makerInch = await this.inch.balanceOf(wallet);
-        const takerInch = await this.inch.balanceOf(_);
+        await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
 
-        await this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01'))); // taking threshold = exact taker amount + eps
-
-        expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.add(takerAmount));
-        expect(await this.dai.balanceOf(_)).to.be.bignumber.equal(takerDai.sub(takerAmount));
-        expect(await this.inch.balanceOf(wallet)).to.be.bignumber.equal(makerInch.sub(makerAmount));
-        expect(await this.inch.balanceOf(_)).to.be.bignumber.equal(takerInch.add(makerAmount));
+        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
+        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
     });
 });
