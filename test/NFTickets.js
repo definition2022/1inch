@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const ethSigUtil = require('eth-sig-util');
 const Wallet = require('ethereumjs-wallet').default;
 
-const NFTMock = artifacts.require('NFTMock');
+// const NFTMock = artifacts.require('NFTMock');
 const TokenMock = artifacts.require('TokenMock');
 const LimitOrderProtocol = artifacts.require('LimitOrderProtocol');
 const AggregatorMock = artifacts.require('AggregatorMock');
@@ -21,9 +21,9 @@ describe('NFTickets', async function () {
         return toBN(spread).setn(255, inverse).toString();
     }
 
-    function buildSinglePriceGetter (swap, oracle, inverse, spread, amount = '0') {
-        return swap.contract.methods.singlePrice(oracle.address, buildInverseWithSpread(inverse, spread), amount).encodeABI();
-    }
+    // function buildSinglePriceGetter (swap, oracle, inverse, spread, amount = '0') {
+    //    return swap.contract.methods.singlePrice(oracle.address, buildInverseWithSpread(inverse, spread), amount).encodeABI();
+    // }
 
     // eslint-disable-next-line no-unused-vars
     function buildDoublePriceGetter (swap, oracle1, oracle2, spread, amount = '0') {
@@ -70,7 +70,7 @@ describe('NFTickets', async function () {
         this.dai = await TokenMock.new('DAI', 'DAI');
         this.weth = await TokenMock.new('WETH', 'WETH');
         this.inch = await TokenMock.new('1INCH', '1INCH');
-        this.morg = await TokenMock.new('Morgenshtern', 'MORG');//await NFTMock.new("Morgenshtern", "MORG");
+        this.morg = await TokenMock.new('Morgenshtern', 'MORG');// await NFTMock.new("Morgenshtern", "MORG");
         
         this.swap = await LimitOrderProtocol.new();
 
@@ -93,8 +93,8 @@ describe('NFTickets', async function () {
         // await this.morg.safeMint(wallet, '8');
         // await this.morg.safeMint(wallet, '9');
         // await this.morg.safeMint(wallet, '10');
-        let balance = await this.morg.balanceOf(wallet)
-        console.log("Issued " + balance + " NFT tickets");
+        const balance = await this.morg.balanceOf(wallet);
+        console.log('Issued ' + balance + ' NFT tickets');
 
         await this.dai.approve(this.swap.address, ether('1000000'));
         await this.weth.approve(this.swap.address, ether('1000000'));
@@ -111,7 +111,7 @@ describe('NFTickets', async function () {
 
     xit('NFT sell', async function () {
         const order = buildOrder(
-            '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(),'0x','0x',
+            '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
         );
 
         const data = buildOrderData(this.chainId, this.swap.address, order);
@@ -121,15 +121,15 @@ describe('NFTickets', async function () {
         const takerMorg = await this.morg.balanceOf(_);
         const makerWeth = await this.weth.balanceOf(wallet);
         const takerWeth = await this.weth.balanceOf(_);
-        console.log("Balances: %s %s %s %s", makerMorg, takerMorg, makerWeth, takerWeth );
+        console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
 
-        await this.swap.fillOrder(order, signature, 0, ether('1000'), 1); 
+        await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
 
         const makerMorg1 = await this.morg.balanceOf(wallet);
         const takerMorg1 = await this.morg.balanceOf(_);
         const makerWeth1 = await this.weth.balanceOf(wallet);
         const takerWeth1 = await this.weth.balanceOf(_);
-        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1/10**18, takerWeth1/10**18 );
+        console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
 
         expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
         expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
@@ -140,7 +140,7 @@ describe('NFTickets', async function () {
     describe('VIP ticket', async function () {
         xit('should fill with correct taker', async function () {
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
+                '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
             // order.allowedSender = _;
             const data = buildOrderData(this.chainId, this.swap.address, order);
@@ -150,9 +150,9 @@ describe('NFTickets', async function () {
             const takerMorg = await this.morg.balanceOf(_);
             const makerWeth = await this.weth.balanceOf(wallet);
             const takerWeth = await this.weth.balanceOf(_);
-            console.log("Balances: %s %s %s %s", makerMorg, takerMorg, makerWeth, takerWeth );
+            console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
 
-            await this.swap.fillOrder(order, signature, 0, 1, 1); 
+            await this.swap.fillOrder(order, signature, 0, 1, 1);
 
             expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
             expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
@@ -162,7 +162,7 @@ describe('NFTickets', async function () {
 
         xit('should not fill with incorrect taker', async function () {
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
+                '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
             order.allowedSender = wallet;
             const data = buildOrderData(this.chainId, this.swap.address, order);
@@ -179,7 +179,7 @@ describe('NFTickets', async function () {
         const makerAmount = 1;
         const takerAmount = ether('1');
         const order = buildOrder(
-            '1', this.morg, this.weth, '1'.toString(), ether('1').toString(),'0x',
+            '1', this.morg, this.weth, '1'.toString(), ether('1').toString(), '0x',
             cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
         );
 
@@ -192,13 +192,13 @@ describe('NFTickets', async function () {
         const takerWeth = await this.weth.balanceOf(_);
 
         await this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01')));
-        console.log("filled order");
+        console.log('filled order');
 
         const makerMorg1 = await this.morg.balanceOf(wallet);
         const takerMorg1 = await this.morg.balanceOf(_);
         const makerWeth1 = await this.weth.balanceOf(wallet);
         const takerWeth1 = await this.weth.balanceOf(_);
-        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1, takerWeth1 );
+        console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1, takerWeth1);
 
         expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
         expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
@@ -287,5 +287,4 @@ describe('NFTickets', async function () {
             'LOP: predicate returned false',
         );
     });
-
 });
