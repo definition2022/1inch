@@ -22,3 +22,4 @@ contracts/OrderRFQMixin.sol
 contracts/tests/ArgumentsDecoderTest.sol
 contracts/WethUnwrapper.sol
 contracts/DatePriceCalculator.sol
+contracts/WhiteListContract.sol
