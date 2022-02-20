@@ -5,6 +5,18 @@
 
 ![NFTicket](NFTicket.png "NFTicket")
 
+## NFTicket Diagrams:
+
+[NFT Sell](diagrams/nft_sell.md)
+
+[Sale expiration ( Predicate )](https://github.com/definition2022/1inch/blob/main/diagrams/ticket_expiration.md)
+
+[Variable price depending on the market conditions (getTakerAmount)](https://github.com/definition2022/1inch/blob/main/diagrams/ticket_price_protection.md)
+
+[VIP Ticket](https://github.com/definition2022/1inch/blob/main/diagrams/vip_nft.md)
+
+[Whitelist](https://github.com/definition2022/1inch/blob/main/diagrams/whitelist.md)
+
 #### Due to time constraints we cloned https://github.com/1inch/limit-order-protocol and added our contract and tests. You can find the original README below.
 
 ---
