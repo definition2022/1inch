@@ -3,7 +3,7 @@
 
 [![CI](https://github.com/definition2022/1inch/actions/workflows/test.yml/badge.svg)](https://github.com/definition2022/1inch/actions/workflows/test.yml)
 
-![NFTicket](NFTicket.jpg "NFTicket")
+![NFTicket](NFTicket.png "NFTicket")
 
 #### Due to time constraints we cloned https://github.com/1inch/limit-order-protocol and added our contract and tests. You can find the original README below.
 
