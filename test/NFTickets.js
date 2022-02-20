@@ -109,40 +109,44 @@ describe('NFTickets', async function () {
         this.daiOracle = await AggregatorMock.new(ether('0.00025'));
     });
 
+    // Purchase of ticket ( Filled 2 orders)
     xit('NFT sell', async function () {
-        const order = buildOrder(
-            '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
-        );
-
-        const data = buildOrderData(this.chainId, this.swap.address, order);
-        const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
-
         const makerMorg = await this.morg.balanceOf(wallet);
         const takerMorg = await this.morg.balanceOf(_);
         const makerWeth = await this.weth.balanceOf(wallet);
         const takerWeth = await this.weth.balanceOf(_);
         console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
 
-        await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
+        for (i = 0; i < 2; i++) {
+            console.log('enter');
+            const order = buildOrder(
+                i.toString(), this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
+            );
+            const data = buildOrderData(this.chainId, this.swap.address, order);
+            const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
+            await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
+            console.log('filled order');
+        }
         const makerMorg1 = await this.morg.balanceOf(wallet);
         const takerMorg1 = await this.morg.balanceOf(_);
         const makerWeth1 = await this.weth.balanceOf(wallet);
         const takerWeth1 = await this.weth.balanceOf(_);
         console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
 
-        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
-        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
-        expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('1000')));
-        expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('1000')));
+        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('2')));
+        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('2')));
+        expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('2000')));
+        expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('2000')));
     });
 
+    // Ticket made for specific buyer ( allowedSender )
     describe('VIP ticket', async function () {
         xit('should fill with correct taker', async function () {
             const order = buildOrder(
                 '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
-            // order.allowedSender = _;
+            order.allowedSender = _;
             const data = buildOrderData(this.chainId, this.swap.address, order);
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
@@ -160,7 +164,7 @@ describe('NFTickets', async function () {
             expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(web3.utils.toBN('1')));
         });
 
-        xit('should not fill with incorrect taker', async function () {
+        it('should not fill with incorrect taker', async function () {
             const order = buildOrder(
                 '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
@@ -175,6 +179,7 @@ describe('NFTickets', async function () {
         });
     });
 
+    // Variable price depending on the market conditions ( getTakerAmount )
     xit('Ticket price protection', async function () {
         const makerAmount = 1;
         const takerAmount = ether('1');
@@ -206,35 +211,51 @@ describe('NFTickets', async function () {
         expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether(makerAmount.toString())));
     });
 
+    // Sale expiration ( Predicate )
     describe('Ticket sale finish', async function () {
         xit('should sell when not finished', async function () {
-            const order = buildOrder(this.swap, this.dai, this.weth, 1, 1, constants.ZERO_ADDRESS, this.swap.contract.methods.timestampBelow(0xff00000000).encodeABI());
+
+            const order = buildOrder(
+                '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
+                this.swap.contract.methods.timestampBelow(0xff00000000).encodeABI(),
+            );
+    
+            const data = buildOrderData(this.chainId, this.swap.address, order);
+            const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+    
+            const makerMorg = await this.morg.balanceOf(wallet);
+            const takerMorg = await this.morg.balanceOf(_);
+            const makerWeth = await this.weth.balanceOf(wallet);
+            const takerWeth = await this.weth.balanceOf(_);
+            console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
+    
+            await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
+            console.log("fill order");
+            const makerMorg1 = await this.morg.balanceOf(wallet);
+            const takerMorg1 = await this.morg.balanceOf(_);
+            const makerWeth1 = await this.weth.balanceOf(wallet);
+            const takerWeth1 = await this.weth.balanceOf(_);
+            console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
+    
+            expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
+            expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+            expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('1000')));
+            expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('1000')));
+        });
+
+        xit('should not sell when finished', async function () {
+            const order = buildOrder(
+                '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
+                this.swap.contract.methods.timestampBelow(0xff0000).encodeABI()
+            );
             const data = buildOrderData(this.chainId, this.swap.address, order);
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
-            const makerDai = await this.dai.balanceOf(wallet);
-            const takerDai = await this.dai.balanceOf(addr1);
-            const makerWeth = await this.weth.balanceOf(wallet);
-            const takerWeth = await this.weth.balanceOf(addr1);
-
-            await this.swap.fillOrder(order, signature, 1, 0, 1);
-
-            expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.subn(1));
-            expect(await this.dai.balanceOf(addr1)).to.be.bignumber.equal(takerDai.addn(1));
-            expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.addn(1));
-            expect(await this.weth.balanceOf(addr1)).to.be.bignumber.equal(takerWeth.subn(1));
+            await expectRevert(
+                this.swap.fillOrder(order, signature, 0, ether('1000'), 1),
+                'LOP: predicate returned false',
+            );
         });
-
-        // xit('should not sell when finished', async function () {
-        //     const order = buildOrder(this.swap, this.dai, this.weth, 1, 1, constants.ZERO_ADDRESS, this.swap.contract.methods.timestampBelow(0xff0000).encodeABI());
-        //     const data = buildOrderData(this.chainId, this.swap.address, order);
-        //     const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
-
-        //     await expectRevert(
-        //         this.swap.fillOrder(order, signature, 1, 0, 1),
-        //         'LOP: predicate returned false',
-        //     );
-        // });
     });
 
     xit('White list gets discount', async function () {
