@@ -281,6 +281,7 @@ describe('NFTickets', async function () {
         });
     });
 
+    // Whitelisted buyers get half price ( InteractiveNotificationReceiver )
     it('White list gets discount', async function () {
         const makerMorg = await this.morg.balanceOf(wallet);
         const takerMorg = await this.morg.balanceOf(_);
