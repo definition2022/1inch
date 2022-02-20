@@ -72,17 +72,12 @@ describe('NFTickets', async function () {
         this.inch = await TokenMock.new('1INCH', '1INCH');
         this.morg = await TokenMock.new('Morgenshtern', 'MORG');//await NFTMock.new("Morgenshtern", "MORG");
         
-        //console.log(this.weth);
-        //console.log(this.nft);
         this.swap = await LimitOrderProtocol.new();
 
-        // We get the chain id from the contract because Ganache (used for coverage) does not return the same chain id
-        // from within the EVM as from the JSON RPC interface.
-        // See https://github.com/trufflesuite/ganache-core/issues/515
         this.chainId = await this.dai.getChainId();
 
         await this.dai.mint(wallet, ether('1000000'));
-        // await this.weth.mint(wallet, ether('1000000'));
+        await this.weth.mint(wallet, ether('1000000'));
         await this.inch.mint(wallet, ether('1000000'));
         await this.dai.mint(_, ether('1000000'));
         await this.weth.mint(_, ether('1000000'));
@@ -112,11 +107,9 @@ describe('NFTickets', async function () {
         await this.morg.approve(this.swap.address, 10, { from: wallet });
 
         this.daiOracle = await AggregatorMock.new(ether('0.00025'));
-        this.ethOracle = await AggregatorMock.new(ether('3000'));
-        this.inchOracle = await AggregatorMock.new('1577615249227853');
     });
 
-    it('NFT sell', async function () {
+    xit('NFT sell', async function () {
         const order = buildOrder(
             '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(),'0x','0x',
         );
@@ -145,7 +138,7 @@ describe('NFTickets', async function () {
     });
 
     describe('VIP ticket', async function () {
-        it('should fill with correct taker', async function () {
+        xit('should fill with correct taker', async function () {
             const order = buildOrder(
                 '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
             );
@@ -167,7 +160,7 @@ describe('NFTickets', async function () {
             expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(web3.utils.toBN('1')));
         });
 
-        it('should not fill with incorrect taker', async function () {
+        xit('should not fill with incorrect taker', async function () {
             const order = buildOrder(
                 '1', this.morg, this.weth, '1'.toString(), '1'.toString(),'0x','0x',
             );
@@ -180,6 +173,119 @@ describe('NFTickets', async function () {
                 'LOP: private order',
             );
         });
+    });
+
+    xit('Ticket price protection', async function () {
+        const makerAmount = 1;
+        const takerAmount = ether('1');
+        const order = buildOrder(
+            '1', this.morg, this.weth, '1'.toString(), ether('1').toString(),'0x',
+            cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
+        );
+
+        const data = buildOrderData(this.chainId, this.swap.address, order);
+        const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+        const makerMorg = await this.morg.balanceOf(wallet);
+        const takerMorg = await this.morg.balanceOf(_);
+        const makerWeth = await this.weth.balanceOf(wallet);
+        const takerWeth = await this.weth.balanceOf(_);
+
+        await this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01')));
+        console.log("filled order");
+
+        const makerMorg1 = await this.morg.balanceOf(wallet);
+        const takerMorg1 = await this.morg.balanceOf(_);
+        const makerWeth1 = await this.weth.balanceOf(wallet);
+        const takerWeth1 = await this.weth.balanceOf(_);
+        console.log("Balances: %d %d %d %d", makerMorg1, takerMorg1, makerWeth1, takerWeth1 );
+
+        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
+        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+        expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether(makerAmount.toString())));
+        expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether(makerAmount.toString())));
+    });
+
+    describe('Ticket sale finish', async function () {
+        xit('should sell when not finished', async function () {
+            const order = buildOrder(this.swap, this.dai, this.weth, 1, 1, constants.ZERO_ADDRESS, this.swap.contract.methods.timestampBelow(0xff00000000).encodeABI());
+            const data = buildOrderData(this.chainId, this.swap.address, order);
+            const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+            const makerDai = await this.dai.balanceOf(wallet);
+            const takerDai = await this.dai.balanceOf(addr1);
+            const makerWeth = await this.weth.balanceOf(wallet);
+            const takerWeth = await this.weth.balanceOf(addr1);
+
+            await this.swap.fillOrder(order, signature, 1, 0, 1);
+
+            expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.subn(1));
+            expect(await this.dai.balanceOf(addr1)).to.be.bignumber.equal(takerDai.addn(1));
+            expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.addn(1));
+            expect(await this.weth.balanceOf(addr1)).to.be.bignumber.equal(takerWeth.subn(1));
+        });
+
+        // xit('should not sell when finished', async function () {
+        //     const order = buildOrder(this.swap, this.dai, this.weth, 1, 1, constants.ZERO_ADDRESS, this.swap.contract.methods.timestampBelow(0xff0000).encodeABI());
+        //     const data = buildOrderData(this.chainId, this.swap.address, order);
+        //     const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+        //     await expectRevert(
+        //         this.swap.fillOrder(order, signature, 1, 0, 1),
+        //         'LOP: predicate returned false',
+        //     );
+        // });
+    });
+
+    xit('White list gets discount', async function () {
+        const makerAmount = ether('100');
+        const takerAmount = ether('631');
+        const priceCall = buildDoublePriceGetter(this.swap, this.inchOracle, this.daiOracle, '1000000000', ether('1'));
+        const predicate = this.swap.contract.methods.lt(ether('6.32'), this.swap.address, priceCall).encodeABI();
+
+        const order = buildOrder(
+            '1', this.inch, this.dai, makerAmount.toString(), takerAmount.toString(),
+            cutLastArg(this.swap.contract.methods.getMakerAmount(makerAmount, takerAmount, 0).encodeABI()),
+            cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
+            constants.ZERO_ADDRESS,
+            predicate,
+        );
+        const data = buildOrderData(this.chainId, this.swap.address, order);
+        const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+        const makerDai = await this.dai.balanceOf(wallet);
+        const takerDai = await this.dai.balanceOf(_);
+        const makerInch = await this.inch.balanceOf(wallet);
+        const takerInch = await this.inch.balanceOf(_);
+
+        await this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01'))); // taking threshold = exact taker amount + eps
+
+        expect(await this.dai.balanceOf(wallet)).to.be.bignumber.equal(makerDai.add(takerAmount));
+        expect(await this.dai.balanceOf(_)).to.be.bignumber.equal(takerDai.sub(takerAmount));
+        expect(await this.inch.balanceOf(wallet)).to.be.bignumber.equal(makerInch.sub(makerAmount));
+        expect(await this.inch.balanceOf(_)).to.be.bignumber.equal(takerInch.add(makerAmount));
+    });
+
+    xit('dai -> 1inch stop loss order predicate is invalid', async function () {
+        const makerAmount = ether('100');
+        const takerAmount = ether('631');
+        const priceCall = buildDoublePriceGetter(this.swap, this.inchOracle, this.daiOracle, '1000000000', ether('1'));
+        const predicate = this.swap.contract.methods.lt(ether('6.31'), this.swap.address, priceCall).encodeABI();
+
+        const order = buildOrder(
+            '1', this.inch, this.dai, makerAmount.toString(), takerAmount.toString(),
+            cutLastArg(this.swap.contract.methods.getMakerAmount(makerAmount, takerAmount, 0).encodeABI()),
+            cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
+            constants.ZERO_ADDRESS,
+            predicate,
+        );
+        const data = buildOrderData(this.chainId, this.swap.address, order);
+        const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
+
+        await expectRevert(
+            this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01'))), // taking threshold = exact taker amount + eps
+            'LOP: predicate returned false',
+        );
     });
 
 });
