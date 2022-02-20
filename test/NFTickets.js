@@ -285,8 +285,6 @@ describe('NFTickets', async function () {
     it('White list gets discount', async function () {
         const makerMorg = await this.morg.balanceOf(wallet);
         const takerMorg = await this.morg.balanceOf(_);
-        const makerWeth = await this.weth.balanceOf(wallet);
-        const takerWeth = await this.weth.balanceOf(_);
 
         const order = buildOrder(
             '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
