@@ -70,7 +70,7 @@ describe('NFTickets', async function () {
         this.dai = await TokenMock.new('DAI', 'DAI');
         this.weth = await TokenMock.new('WETH', 'WETH');
         this.inch = await TokenMock.new('1INCH', '1INCH');
-        this.morg = await TokenMock.new('Morgenshtern', 'MORG');// await NFTMock.new("Morgenshtern", "MORG");
+        this.ticketNFT = await TokenMock.new('Morgenshtern', 'MORG');// await NFTMock.new("Morgenshtern", "MORG");
         
         this.swap = await LimitOrderProtocol.new();
 
@@ -82,45 +82,45 @@ describe('NFTickets', async function () {
         await this.dai.mint(_, ether('1000000'));
         await this.weth.mint(_, ether('1000000'));
         await this.inch.mint(_, ether('1000000'));
-        await this.morg.mint(wallet, 10);
-        // await this.morg.safeMint(wallet, '1');
-        // await this.morg.safeMint(wallet, '2');
-        // await this.morg.safeMint(wallet, '3');
-        // await this.morg.safeMint(wallet, '4');
-        // await this.morg.safeMint(wallet, '5');
-        // await this.morg.safeMint(wallet, '6');
-        // await this.morg.safeMint(wallet, '7');
-        // await this.morg.safeMint(wallet, '8');
-        // await this.morg.safeMint(wallet, '9');
-        // await this.morg.safeMint(wallet, '10');
-        const balance = await this.morg.balanceOf(wallet);
+        await this.ticketNFT.mint(wallet, 10);
+        // await this.ticketNFT.safeMint(wallet, '1');
+        // await this.ticketNFT.safeMint(wallet, '2');
+        // await this.ticketNFT.safeMint(wallet, '3');
+        // await this.ticketNFT.safeMint(wallet, '4');
+        // await this.ticketNFT.safeMint(wallet, '5');
+        // await this.ticketNFT.safeMint(wallet, '6');
+        // await this.ticketNFT.safeMint(wallet, '7');
+        // await this.ticketNFT.safeMint(wallet, '8');
+        // await this.ticketNFT.safeMint(wallet, '9');
+        // await this.ticketNFT.safeMint(wallet, '10');
+        const balance = await this.ticketNFT.balanceOf(wallet);
         console.log('Issued ' + balance + ' NFT tickets');
 
         await this.dai.approve(this.swap.address, ether('1000000'));
         await this.weth.approve(this.swap.address, ether('1000000'));
         await this.inch.approve(this.swap.address, ether('1000000'));
-        await this.morg.approve(this.swap.address, 10);
-        // await this.morg.setApprovalForAll(this.swap.address, true);
+        await this.ticketNFT.approve(this.swap.address, 10);
+        // await this.ticketNFT.setApprovalForAll(this.swap.address, true);
         await this.dai.approve(this.swap.address, ether('1000000'), { from: wallet });
         await this.weth.approve(this.swap.address, ether('1000000'), { from: wallet });
         await this.inch.approve(this.swap.address, ether('1000000'), { from: wallet });
-        await this.morg.approve(this.swap.address, 10, { from: wallet });
+        await this.ticketNFT.approve(this.swap.address, 10, { from: wallet });
 
         this.daiOracle = await AggregatorMock.new(ether('0.00025'));
     });
 
     // Purchase of ticket ( Filled 2 orders)
     xit('NFT sell', async function () {
-        const makerMorg = await this.morg.balanceOf(wallet);
-        const takerMorg = await this.morg.balanceOf(_);
+        const makerTicketNFT = await this.ticketNFT.balanceOf(wallet);
+        const takerTicketNFT = await this.ticketNFT.balanceOf(_);
         const makerWeth = await this.weth.balanceOf(wallet);
         const takerWeth = await this.weth.balanceOf(_);
-        console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
+        console.log('Balances: %s %s %s %s', makerTicketNFT, takerTicketNFT, makerWeth, takerWeth);
 
         for (i = 0; i < 2; i++) {
             console.log('enter');
             const order = buildOrder(
-                i.toString(), this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
+                i.toString(), this.ticketNFT, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x',
             );
             const data = buildOrderData(this.chainId, this.swap.address, order);
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
@@ -128,14 +128,14 @@ describe('NFTickets', async function () {
             await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
             console.log('filled order');
         }
-        const makerMorg1 = await this.morg.balanceOf(wallet);
-        const takerMorg1 = await this.morg.balanceOf(_);
+        const makerTicketNFT1 = await this.ticketNFT.balanceOf(wallet);
+        const takerTicketNFT1 = await this.ticketNFT.balanceOf(_);
         const makerWeth1 = await this.weth.balanceOf(wallet);
         const takerWeth1 = await this.weth.balanceOf(_);
-        console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
+        console.log('Balances: %d %d %d %d', makerTicketNFT1, takerTicketNFT1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
 
-        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('2')));
-        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('2')));
+        expect(await this.ticketNFT.balanceOf(wallet)).to.be.bignumber.equal(makerTicketNFT.sub(web3.utils.toBN('2')));
+        expect(await this.ticketNFT.balanceOf(_)).to.be.bignumber.equal(takerTicketNFT.add(web3.utils.toBN('2')));
         expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('2000')));
         expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('2000')));
     });
@@ -144,29 +144,29 @@ describe('NFTickets', async function () {
     describe('VIP ticket', async function () {
         xit('should fill with correct taker', async function () {
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
+                '1', this.ticketNFT, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
             order.allowedSender = _;
             const data = buildOrderData(this.chainId, this.swap.address, order);
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
-            const makerMorg = await this.morg.balanceOf(wallet);
-            const takerMorg = await this.morg.balanceOf(_);
+            const makerTicketNFT = await this.ticketNFT.balanceOf(wallet);
+            const takerTicketNFT = await this.ticketNFT.balanceOf(_);
             const makerWeth = await this.weth.balanceOf(wallet);
             const takerWeth = await this.weth.balanceOf(_);
-            console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
+            console.log('Balances: %s %s %s %s', makerTicketNFT, takerTicketNFT, makerWeth, takerWeth);
 
             await this.swap.fillOrder(order, signature, 0, 1, 1);
 
-            expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
-            expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+            expect(await this.ticketNFT.balanceOf(wallet)).to.be.bignumber.equal(makerTicketNFT.sub(web3.utils.toBN('1')));
+            expect(await this.ticketNFT.balanceOf(_)).to.be.bignumber.equal(takerTicketNFT.add(web3.utils.toBN('1')));
             expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(web3.utils.toBN('1')));
             expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(web3.utils.toBN('1')));
         });
 
         it('should not fill with incorrect taker', async function () {
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
+                '1', this.ticketNFT, this.weth, '1'.toString(), '1'.toString(), '0x', '0x',
             );
             order.allowedSender = wallet;
             const data = buildOrderData(this.chainId, this.swap.address, order);
@@ -184,29 +184,29 @@ describe('NFTickets', async function () {
         const makerAmount = 1;
         const takerAmount = ether('1');
         const order = buildOrder(
-            '1', this.morg, this.weth, '1'.toString(), ether('1').toString(), '0x',
+            '1', this.ticketNFT, this.weth, '1'.toString(), ether('1').toString(), '0x',
             cutLastArg(this.swap.contract.methods.getTakerAmount(makerAmount, takerAmount, 0).encodeABI()),
         );
 
         const data = buildOrderData(this.chainId, this.swap.address, order);
         const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
 
-        const makerMorg = await this.morg.balanceOf(wallet);
-        const takerMorg = await this.morg.balanceOf(_);
+        const makerTicketNFT = await this.ticketNFT.balanceOf(wallet);
+        const takerTicketNFT = await this.ticketNFT.balanceOf(_);
         const makerWeth = await this.weth.balanceOf(wallet);
         const takerWeth = await this.weth.balanceOf(_);
 
         await this.swap.fillOrder(order, signature, makerAmount, 0, takerAmount.add(ether('0.01')));
         console.log('filled order');
 
-        const makerMorg1 = await this.morg.balanceOf(wallet);
-        const takerMorg1 = await this.morg.balanceOf(_);
+        const makerTicketNFT1 = await this.ticketNFT.balanceOf(wallet);
+        const takerTicketNFT1 = await this.ticketNFT.balanceOf(_);
         const makerWeth1 = await this.weth.balanceOf(wallet);
         const takerWeth1 = await this.weth.balanceOf(_);
-        console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1, takerWeth1);
+        console.log('Balances: %d %d %d %d', makerTicketNFT1, takerTicketNFT1, makerWeth1, takerWeth1);
 
-        expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
-        expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+        expect(await this.ticketNFT.balanceOf(wallet)).to.be.bignumber.equal(makerTicketNFT.sub(web3.utils.toBN('1')));
+        expect(await this.ticketNFT.balanceOf(_)).to.be.bignumber.equal(takerTicketNFT.add(web3.utils.toBN('1')));
         expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether(makerAmount.toString())));
         expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether(makerAmount.toString())));
     });
@@ -216,36 +216,36 @@ describe('NFTickets', async function () {
         xit('should sell when not finished', async function () {
 
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
+                '1', this.ticketNFT, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
                 this.swap.contract.methods.timestampBelow(0xff00000000).encodeABI(),
             );
     
             const data = buildOrderData(this.chainId, this.swap.address, order);
             const signature = ethSigUtil.signTypedMessage(account.getPrivateKey(), { data });
     
-            const makerMorg = await this.morg.balanceOf(wallet);
-            const takerMorg = await this.morg.balanceOf(_);
+            const makerTicketNFT = await this.ticketNFT.balanceOf(wallet);
+            const takerTicketNFT = await this.ticketNFT.balanceOf(_);
             const makerWeth = await this.weth.balanceOf(wallet);
             const takerWeth = await this.weth.balanceOf(_);
-            console.log('Balances: %s %s %s %s', makerMorg, takerMorg, makerWeth, takerWeth);
+            console.log('Balances: %s %s %s %s', makerTicketNFT, takerTicketNFT, makerWeth, takerWeth);
     
             await this.swap.fillOrder(order, signature, 0, ether('1000'), 1);
             console.log("fill order");
-            const makerMorg1 = await this.morg.balanceOf(wallet);
-            const takerMorg1 = await this.morg.balanceOf(_);
+            const makerTicketNFT1 = await this.ticketNFT.balanceOf(wallet);
+            const takerTicketNFT1 = await this.ticketNFT.balanceOf(_);
             const makerWeth1 = await this.weth.balanceOf(wallet);
             const takerWeth1 = await this.weth.balanceOf(_);
-            console.log('Balances: %d %d %d %d', makerMorg1, takerMorg1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
+            console.log('Balances: %d %d %d %d', makerTicketNFT1, takerTicketNFT1, makerWeth1 / 10 ** 18, takerWeth1 / 10 ** 18);
     
-            expect(await this.morg.balanceOf(wallet)).to.be.bignumber.equal(makerMorg.sub(web3.utils.toBN('1')));
-            expect(await this.morg.balanceOf(_)).to.be.bignumber.equal(takerMorg.add(web3.utils.toBN('1')));
+            expect(await this.ticketNFT.balanceOf(wallet)).to.be.bignumber.equal(makerTicketNFT.sub(web3.utils.toBN('1')));
+            expect(await this.ticketNFT.balanceOf(_)).to.be.bignumber.equal(takerTicketNFT.add(web3.utils.toBN('1')));
             expect(await this.weth.balanceOf(wallet)).to.be.bignumber.equal(makerWeth.add(ether('1000')));
             expect(await this.weth.balanceOf(_)).to.be.bignumber.equal(takerWeth.sub(ether('1000')));
         });
 
         xit('should not sell when finished', async function () {
             const order = buildOrder(
-                '1', this.morg, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
+                '1', this.ticketNFT, this.weth, '1'.toString(), ether('1000').toString(), '0x', '0x', constants.ZERO_ADDRESS, 
                 this.swap.contract.methods.timestampBelow(0xff0000).encodeABI()
             );
             const data = buildOrderData(this.chainId, this.swap.address, order);
