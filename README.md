@@ -17,6 +17,8 @@
 
 [Whitelist](https://github.com/definition2022/1inch/blob/main/diagrams/whitelist.md)
 
+[Presentation](https://docs.google.com/presentation/d/1s0zDDjYRRHtTJaFDer_UGjqb6bYw0864dpmKxMYGYuQ/edit?usp=sharing)
+
 #### Due to time constraints we cloned https://github.com/1inch/limit-order-protocol and added our contract and tests. You can find the original README below.
 
 ---
